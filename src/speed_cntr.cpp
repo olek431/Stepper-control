@@ -52,7 +52,7 @@ void winder_stop_running(void) {
 }
 
 void winderSetSpeed(unsigned speed, unsigned acceleration)  {
-  11111111
+  
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
   winder1.min_delay = T2_A_T_x100 / speed;
   Serial.print("Min delay winder ");
