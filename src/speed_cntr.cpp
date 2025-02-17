@@ -85,7 +85,7 @@ void winderSetSpeed(unsigned speed, unsigned acceleration)  {
 void setSpeed(unsigned speed, unsigned acceleration)  {
   
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
-  spool1.min_delay = A_T_x100 / speed;
+  
   //Serial.print("Min delay ");
   //Serial.println(spool.min_delay);
   // Set accelration by calc the first (c0) step delay .
