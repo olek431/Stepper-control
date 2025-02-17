@@ -89,10 +89,10 @@ void loop()
 {   
     int potPosition = analogRead(POT);
     value = value - BETA*(value - potPosition);
-    uint16_t speed = map(value, 0, 1024, 500, 6000);
+    uint16_t speed = map(value, 0, 1024, 10, 500);
     if(abs(value-previousPotPosition) > 5)    {
-        setSpeed(speed, 10000);
-        winderSetSpeed(speed, 10000);
+        setSpeed(speed, 50);
+        winderSetSpeed(speed, 50);
         previousPotPosition = value;
     }
     

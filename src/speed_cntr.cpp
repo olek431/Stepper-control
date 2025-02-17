@@ -54,14 +54,12 @@ void winder_stop_running(void) {
 void winderSetSpeed(unsigned speed, unsigned acceleration)  {
   
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
-  winder1.min_delay = T2_A_T_x100 / speed;
+  winder1.min_delay = F_CPU*M2_ALPHA/(T2_PRESCALER*6*speed) - 1; //speed in rpm
   Serial.print("Min delay winder ");
   Serial.println(winder1.min_delay);
   // Set accelration by calc the first (c0) step delay .
-  // step_delay = 1/tt * sqrt(2*alpha/accel)
-  // step_delay = ( tfreq*0.676/100 )*100 * sqrt( (2*alpha*10000000000) / (accel*100) )/10000
   if(winder1.run_state == STOP) {
-    winder1.step_delay = (T2_FREQ_148 * sqrt_calc(T2_A_SQ / acceleration))/100;
+    winder1.step_delay = 100*sqrt_calc(M2_ALPHA*2/acceleration);//accel from 1 to 100
   }
     
   if(winder1.step_delay <= winder1.min_delay){
@@ -70,9 +68,10 @@ void winderSetSpeed(unsigned speed, unsigned acceleration)  {
   }
   else{
     winder1.run_state = ACCEL;
+    winder1.accel_count = 0;
   }
 
-  winder1.accel_count = 0;
+  
   status_state.running = TRUE;
   OCR2A = winder1.step_delay;
   // Set Timer/Counter to divide clock by 64
@@ -85,25 +84,25 @@ void winderSetSpeed(unsigned speed, unsigned acceleration)  {
 void setSpeed(unsigned speed, unsigned acceleration)  {
   
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
-  
+  spool1.min_delay = F_CPU*M1_ALPHA/(T1_PRESCALER*6*speed) - 1; //speed in rpm
   //Serial.print("Min delay ");
   //Serial.println(spool.min_delay);
   // Set accelration by calc the first (c0) step delay .
   // step_delay = 1/tt * sqrt(2*alpha/accel)
   // step_delay = ( tfreq*0.676/100 )*100 * sqrt( (2*alpha*10000000000) / (accel*100) )/10000
   if(spool1.run_state == STOP) {
-    spool1.step_delay = (T1_FREQ_148 * sqrt_calc(A_SQ / acceleration))/100;
+    spool1.step_delay = 1000*sqrt_calc(M1_ALPHA*2/acceleration); //
   }
     
-  if(spool1.step_delay <= spool1.min_delay){
+  if(spool1.step_delay <= spool1.min_delay) {
     spool1.step_delay = spool1.min_delay;
     spool1.run_state = RUN;
   }
   else{
     spool1.run_state = ACCEL;
+    spool1.accel_count = 0;
   }
-
-  spool1.accel_count = 0;
+ 
   status_state.running = TRUE;
   OCR1A = spool1.step_delay;
   // Set Timer/Counter to divide clock by 64
@@ -132,7 +131,7 @@ void spoolTimer1Init (void)
 void winderTimer2Init (void)
 {
   TCCR2A = 0b00000010;//WGM 2:0 = 2 0b010 - CTC mode
-  TCCR2B = 0b00000110;//WGM02 = 0; prescaler 0b111 /1024
+  TCCR2B = 0b00000111;//WGM02 = 0; prescaler 0b111 /1024
   TIMSK2 |= 0b00000010;       //set for output compare interrupt
   //OCR2A = 77;//
   winder1.run_state = STOP;
@@ -160,16 +159,12 @@ ISR(TIMER1_COMPA_vect)
   static int last_accel_delay;
   // Counting steps when moving.
   static unsigned int step_count = 0;
-  // Keep track of remainder from new_step-delay calculation to incrase accurancy
-  static unsigned int rest = 0;
-
+  
   OCR1A = spool1.step_delay;
 
   switch(spool1.run_state) {
     case STOP:
       step_count = 0;
-      rest = 0;
-      // Stop Timer/Counter 1.
       TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
       status_state.running = FALSE;
       break;
@@ -178,14 +173,12 @@ ISR(TIMER1_COMPA_vect)
       digitalWrite(PIND3, HIGH);
       digitalWrite(PIND3, LOW);
       spool1.accel_count++;
-      new_step_delay = spool1.step_delay - (((2 * (long)spool1.step_delay) + rest)/(4 * spool1.accel_count + 1));
-      rest = ((2 * (long)spool1.step_delay)+rest)%(4 * spool1.accel_count + 1);
+      new_step_delay = spool1.step_delay*(4*spool1.accel_count-1)/(4*spool1.accel_count + 1);
+      
       if(new_step_delay <= spool1.min_delay) {
-        last_accel_delay = new_step_delay;
         new_step_delay = spool1.min_delay;
-        rest = 0;
         spool1.run_state = RUN;
-        //Serial.println("New run");
+        spool1.accel_count = 0;
       }
       break;
 
@@ -201,8 +194,7 @@ ISR(TIMER1_COMPA_vect)
       digitalWrite(PIND3, LOW);
       
       spool1.accel_count++;
-      new_step_delay = spool1.step_delay - (((2 * (long)spool1.step_delay) + rest)/(4 * spool1.accel_count + 1));
-      rest = ((2 * (long)spool1.step_delay)+rest)%(4 * spool1.accel_count + 1);
+      new_step_delay = spool1.step_delay*(4*spool1.accel_count + 1)/(4*spool1.accel_count - 1);
       // Check if we at last step
       if(spool1.accel_count >= 0){
         spool1.run_state = STOP;
@@ -224,15 +216,14 @@ ISR(TIMER2_COMPA_vect)
   static int last_accel_delay;
   // Counting steps when moving.
   static unsigned int step_count = 0;
-  // Keep track of remainder from new_step-delay calculation to incrase accurancy
-  static unsigned int rest = 0;
+  
 
   OCR2A = winder1.step_delay;
 
   switch(winder1.run_state) {
     case STOP:
       step_count = 0;
-      rest = 0;
+      
       // Stop Timer/Counter 1.
       TCCR2B &= ~((1<<CS22)|(1<<CS21)|(1<<CS20));
       status_state.running = FALSE;
@@ -242,14 +233,12 @@ ISR(TIMER2_COMPA_vect)
       digitalWrite(PIND5, HIGH);
       digitalWrite(PIND5, LOW);
       winder1.accel_count++;
-      new_step_delay = winder1.step_delay - (((2 * (long)winder1.step_delay) + rest)/(4 * winder1.accel_count + 1));
-      rest = ((2 * (long)winder1.step_delay)+rest)%(4 * winder1.accel_count + 1);
+      new_step_delay = winder1.step_delay*(4*winder1.accel_count - 1)/(4*winder1.accel_count + 1);
       if(new_step_delay <= winder1.min_delay) {
-        last_accel_delay = new_step_delay;
         new_step_delay = winder1.min_delay;
-        rest = 0;
+        
         winder1.run_state = RUN;
-        //Serial.println("New run");
+        winder1.accel_count=0;
       }
       break;
 
@@ -265,8 +254,7 @@ ISR(TIMER2_COMPA_vect)
       digitalWrite(PIND5, LOW);
       
       winder1.accel_count++;
-      new_step_delay = winder1.step_delay - (((2 * (long)winder1.step_delay) + rest)/(4 * winder1.accel_count + 1));
-      rest = ((2 * (long)winder1.step_delay)+rest)%(4 * winder1.accel_count + 1);
+      new_step_delay = winder1.step_delay*(4*winder1.accel_count + 1)/(4*winder1.accel_count - 1);
       // Check if we at last step
       if(winder1.accel_count >= 0){
         winder1.run_state = STOP;

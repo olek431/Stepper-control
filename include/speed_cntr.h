@@ -59,7 +59,8 @@ struct speedRampData{
  * the timer1 frequency is the clock frequency divided by 8.
  */
 // Timer/Counter 1 running on 16MHz / 64 = 250kHz (4uS). (T1-FREQ 250000)
-#define T1_FREQ 250000
+#define F_CPU 16000000L
+#define T1_PRESCALER 64
 #define HALFSTEPS 1
 //! Number of (full)steps per round on stepper motor in use.
 #define FSPR 200
@@ -71,7 +72,7 @@ struct speedRampData{
   
 #endif
 
-#define T2_FREQ 62500 //16MHz / 1024 = 15625kHz
+#define T2_PRESCALER 1024
 #define T2_HALFSTEPS 1
 //! Number of (full)steps per round on stepper motor in use.
 #define T2_FSPR 200
@@ -83,19 +84,8 @@ struct speedRampData{
   
 #endif
 
-// Maths constants. To simplify maths when calculating in speed_cntr_Move().
-#define ALPHA (2*3.14159/SPR)                    // 2*pi/spr
-#define A_T_x100 ((long)(ALPHA*T1_FREQ*100))     // (ALPHA / T1_FREQ)*100
-#define T1_FREQ_148 ((int)((T1_FREQ*0.676)/100)) // divided by 100 and scaled by 0.676
-#define A_SQ (long)(ALPHA*2*10000000000)         // ALPHA*2*10000000000
-#define A_x20000 (int)(ALPHA*20000)              // ALPHA*20000
-
-// Maths constants for Timer2 - Winder. To simplify maths when calculating in speed_cntr_Move().
-#define T2_ALPHA (2*3.14159/T2_SPR)                    // 2*pi/spr
-#define T2_A_T_x100 ((long)(T2_ALPHA*T2_FREQ*100))     // (ALPHA / T1_FREQ)*100
-#define T2_FREQ_148 ((int)((T2_FREQ*0.676)/100)) // divided by 100 and scaled by 0.676
-#define T2_A_SQ (long)(T2_ALPHA*2*10000000000)         // ALPHA*2*10000000000
-#define T2_A_x20000 (int)(T2_ALPHA*20000)              // ALPHA*20000
+#define M1_ALPHA 1.8
+#define M2_ALPHA 1.8
 
 #define LPR 8 //ball screw length per rotation
 #define SPOOL_LENGTH 100
