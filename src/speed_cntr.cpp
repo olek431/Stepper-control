@@ -51,26 +51,34 @@ void winder_stop_running(void) {
   winder1.run_state = DECEL;
 }
 
-void winderSetSpeed(unsigned speed, unsigned acceleration)  {
+void winderSetSpeed(int speed, int acceleration)  {
   
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
-  winder1.min_delay = F_CPU*M2_ALPHA/(T2_PRESCALER*6*speed) - 1; //speed in rpm
-  Serial.print("Min delay winder ");
+  winder1.min_delay = F_CPU*M2_ALPHA/(2*T2_PRESCALER*6*speed); //speed in rpm
+  Serial.print("winder Min delay before corr  ");
+  Serial.println(winder1.min_delay);
+  if(winder1.min_delay > 255) winder1.min_delay = 255;
+  if(winder1.min_delay < 10) winder1.min_delay = 10;
+  Serial.print("winder Min delay  ");
   Serial.println(winder1.min_delay);
   // Set accelration by calc the first (c0) step delay .
   if(winder1.run_state == STOP) {
     winder1.step_delay = 100*sqrt_calc(M2_ALPHA*2/acceleration);//accel from 1 to 100
+    winder1.run_state = RUN;
+    Serial.println("Winder RUN after Stop");
   }
     
   if(winder1.step_delay <= winder1.min_delay){
     winder1.step_delay = winder1.min_delay;
     winder1.run_state = RUN;
+    Serial.println("WRUN");
   }
+  /*
   else{
     winder1.run_state = ACCEL;
     winder1.accel_count = 0;
   }
-
+*/
   
   status_state.running = TRUE;
   OCR2A = winder1.step_delay;
@@ -81,28 +89,35 @@ void winderSetSpeed(unsigned speed, unsigned acceleration)  {
 
 }
 
-void setSpeed(unsigned speed, unsigned acceleration)  {
+void setSpeed(int speed, int acceleration)  {
   
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
-  spool1.min_delay = F_CPU*M1_ALPHA/(T1_PRESCALER*6*speed) - 1; //speed in rpm
-  //Serial.print("Min delay ");
-  //Serial.println(spool.min_delay);
+  spool1.min_delay = F_CPU*M1_ALPHA/(2*T1_PRESCALER*6*speed); //speed in rpm
+  Serial.print("Min delay ");
+  Serial.println(spool1.min_delay);
   // Set accelration by calc the first (c0) step delay .
   // step_delay = 1/tt * sqrt(2*alpha/accel)
   // step_delay = ( tfreq*0.676/100 )*100 * sqrt( (2*alpha*10000000000) / (accel*100) )/10000
   if(spool1.run_state == STOP) {
     spool1.step_delay = 1000*sqrt_calc(M1_ALPHA*2/acceleration); //
+    spool1.run_state = RUN;
+    Serial.println("RUN after Stop");
+  
   }
     
   if(spool1.step_delay <= spool1.min_delay) {
     spool1.step_delay = spool1.min_delay;
     spool1.run_state = RUN;
+    Serial.println("RUN");
+    
   }
+  /*
   else{
     spool1.run_state = ACCEL;
     spool1.accel_count = 0;
+    Serial.println("ACCEL");
   }
- 
+ */
   status_state.running = TRUE;
   OCR1A = spool1.step_delay;
   // Set Timer/Counter to divide clock by 64

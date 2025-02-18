@@ -31,9 +31,8 @@
  */
 void stop_running(void );
 void winder_stop_running(void );
-void setSpeed(unsigned int, unsigned int );
-void winderSetSpeed(unsigned , unsigned );
-
+void setSpeed(int, int );
+void winderSetSpeed(int , int );
 
 struct speedRampData{
   //! What part of the speed ramp we are in.
@@ -41,13 +40,13 @@ struct speedRampData{
   //! Direction stepper motor should move.
   volatile unsigned char dir;
   //! Peroid of next timer delay. At start this value set the accelration rate.
-  volatile unsigned int step_delay = 10;
+  volatile float step_delay = 10;
   //! What step_pos to start decelaration
   volatile unsigned int decel_start;
   //! Sets deceleration rate.
   volatile signed int decel_val;
   //! Minimum time delay (max speed)
-  volatile signed int min_delay;
+  volatile float min_delay = 100;
   //! Counter used when accelerateing/decelerateing to calculate step_delay.
   volatile signed int accel_count;
 };
@@ -59,8 +58,8 @@ struct speedRampData{
  * the timer1 frequency is the clock frequency divided by 8.
  */
 // Timer/Counter 1 running on 16MHz / 64 = 250kHz (4uS). (T1-FREQ 250000)
-#define F_CPU 16000000L
-#define T1_PRESCALER 64
+#define F_CPU 16000000.0
+#define T1_PRESCALER 64.0
 #define HALFSTEPS 1
 //! Number of (full)steps per round on stepper motor in use.
 #define FSPR 200
@@ -72,7 +71,7 @@ struct speedRampData{
   
 #endif
 
-#define T2_PRESCALER 1024
+#define T2_PRESCALER 1024.0
 #define T2_HALFSTEPS 1
 //! Number of (full)steps per round on stepper motor in use.
 #define T2_FSPR 200

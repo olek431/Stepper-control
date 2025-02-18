@@ -66,34 +66,26 @@ void setup()
     /*setup Timer0 - 16bit*/ //main Winding
     spoolTimer1Init();
     winderTimer2Init ();
-    //Serial.println("Set Speed End");
-   /*setup Timer0 - 8bit*/
-    /*  
-    TCCR0A = 0b00000010;//WGM0 2:0 = 2 0b010 - CTC mode
-    TCCR0B = 0b00000101;//WGM02 = 0; prescaler 0b101 /256
-    TIMSK0 |= 0b00000010;       //set for output compare interrupt
-    OCR0A = 15624;//1s blinking delay
-    */  
+    Serial.println(M1_ALPHA);
+    Serial.println(F_CPU);
+    Serial.println(T1_PRESCALER);
     
-   /*setup Timer2*/ //winder
-    /*
-    TCCR2A = 0b00000010;//WGM 2:0 = 2 0b010 - CTC mode
-    TCCR2B = 0b00000111;//WGM02 = 0; prescaler 0b111 /1024
-    TIMSK2 |= 0b00000010;       //set for output compare interrupt
-    OCR2A = 77;//1s blinking delay
-    */
-    //sei();
 }
 
 void loop()
 {   
     int potPosition = analogRead(POT);
-    value = value - BETA*(value - potPosition);
-    uint16_t speed = map(value, 0, 1024, 10, 500);
+    value = value - BETA*((int)value - potPosition);
+    
     if(abs(value-previousPotPosition) > 5)    {
+        int speed = map(value, 0, 1024, 10, 700);
         setSpeed(speed, 50);
-        winderSetSpeed(speed, 50);
+        winderSetSpeed(speed/32, 50);
         previousPotPosition = value;
+        Serial.print("value =");
+        Serial.println(value);
+        Serial.print("speed rpm =");
+        Serial.println(speed);
     }
     
 /*
