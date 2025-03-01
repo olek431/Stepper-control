@@ -66,6 +66,8 @@ void setup()
     /*setup Timer0 - 16bit*/ //main Winding
     spoolTimer1Init();
     winderTimer2Init ();
+    digitalWrite(winder.MS1, HIGH); //quater steps 1/4th
+	digitalWrite(winder.MS2, HIGH);
     Serial.println(M1_ALPHA);
     Serial.println(F_CPU);
     Serial.println(T1_PRESCALER);
@@ -78,7 +80,7 @@ void loop()
     value = value - BETA*((int)value - potPosition);
     
     if(abs(value-previousPotPosition) > 5)    {
-        int speed = map(value, 0, 1024, 10, 700);
+        int speed = map(value, 0, 1024, 60, 600);
         setSpeed(speed, 50);
         winderSetSpeed(speed/32, 50);
         previousPotPosition = value;

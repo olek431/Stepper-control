@@ -52,18 +52,17 @@ void winder_stop_running(void) {
 }
 
 void winderSetSpeed(int speed, int acceleration)  {
-  
+    
   //TCCR1B &= ~((1<<CS12)|(1<<CS11)|(1<<CS10));
-  winder1.min_delay = F_CPU*M2_ALPHA/(2*T2_PRESCALER*6*speed); //speed in rpm
-  Serial.print("winder Min delay before corr  ");
-  Serial.println(winder1.min_delay);
-  if(winder1.min_delay > 255) winder1.min_delay = 255;
-  if(winder1.min_delay < 10) winder1.min_delay = 10;
+  Serial.print("winder speed  ");
+  Serial.println(speed);
+  winder1.min_delay = F_CPU*M2_ALPHA/(8*T2_PRESCALER*6*speed); //speed in rpm
+   
   Serial.print("winder Min delay  ");
   Serial.println(winder1.min_delay);
   // Set accelration by calc the first (c0) step delay .
   if(winder1.run_state == STOP) {
-    winder1.step_delay = 100*sqrt_calc(M2_ALPHA*2/acceleration);//accel from 1 to 100
+    winder1.step_delay = 500*sqrt_calc(M2_ALPHA*2/acceleration);//accel from 1 to 100
     winder1.run_state = RUN;
     Serial.println("Winder RUN after Stop");
   }
@@ -83,7 +82,7 @@ void winderSetSpeed(int speed, int acceleration)  {
   status_state.running = TRUE;
   OCR2A = winder1.step_delay;
   // Set Timer/Counter to divide clock by 64
-  TCCR2B |= ((0<<CS22)|(1<<CS21)|(1<<CS20));
+  TCCR2B |= ((1<<CS22)|(1<<CS21)|(1<<CS20));
   //Serial.print("Running state ");
   //Serial.println(spool.run_state);
 
@@ -146,7 +145,7 @@ void spoolTimer1Init (void)
 void winderTimer2Init (void)
 {
   TCCR2A = 0b00000010;//WGM 2:0 = 2 0b010 - CTC mode
-  TCCR2B = 0b00000111;//WGM02 = 0; prescaler 0b111 /1024
+  TCCR2B = 0b00000111;//WGM02 = 0; prescaler 0b111 /256
   TIMSK2 |= 0b00000010;       //set for output compare interrupt
   //OCR2A = 77;//
   winder1.run_state = STOP;
